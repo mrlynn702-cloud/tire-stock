@@ -27,14 +27,6 @@
       <p class="value" id="stat-sku">-</p>
     </div>
     <div class="stat-card">
-      <p class="label">เส้นคงเหลือรวม</p>
-      <p class="value mono" id="stat-total">-</p>
-    </div>
-    <div class="stat-card">
-      <p class="label">รายการใกล้หมด</p>
-      <p class="value" id="stat-low" style="color:var(--danger);">-</p>
-    </div>
-    <div class="stat-card">
       <p class="label">อัปเดตล่าสุด</p>
       <p class="value" id="stat-updated" style="font-size:15px;">-</p>
     </div>
@@ -82,7 +74,7 @@
   <p id="no-results" style="display:none; text-align:center; color:var(--text-muted); font-size:13px; padding:20px 0;">ไม่พบรายการที่ตรงกับคำค้นหา</p>
 
   <footer class="hint">
-    จำนวนคงเหลือถูกปิดบังด้วย X ตามจำนวนหลักของตัวเลขจริง เพื่อความเป็นส่วนตัวของข้อมูลสต๊อก · เกณฑ์ "ใกล้หมด" คือน้อยกว่า 5 เส้น
+    จำนวนคงเหลือแสดงแบบปิดบังบางส่วนเพื่อความเป็นส่วนตัว · รายการที่เหลือน้อยกว่า 10 เส้น จะแสดงเป็น "X" ทั้งหมด
   </footer>
 
 </div>
@@ -90,7 +82,7 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script>
-const LOW_STOCK_THRESHOLD = 5;
+const LOW_STOCK_THRESHOLD = 10;
 let allStockData = [];
 
 function maskNumber(n) {
@@ -132,13 +124,14 @@ function renderRows(data) {
     const typeBadge = typeUpper
       ? `<span class="badge ${typeBadgeClass}">${typeUpper}</span>`
       : '<span style="color:var(--text-muted);">-</span>';
+    const qtyDisplay = isLow ? 'X' : maskNumber(r.qty || 0);
     return `
       <tr>
         <td data-label="ชื่อสินค้า" style="max-width:280px; white-space:normal;">${r.item_name || '-'}</td>
         <td data-label="ยี่ห้อ" style="color:var(--text-secondary);">${r.brand || '-'}</td>
         <td data-label="MC/BC" class="center">${typeBadge}</td>
         <td data-label="ปี" class="center">${r.year || '-'}</td>
-        <td data-label="คงเหลือ" class="num mono">${maskNumber(r.qty || 0)}</td>
+        <td data-label="คงเหลือ" class="num mono">${qtyDisplay}</td>
         <td data-label="สถานะ" class="center">${statusBadge}</td>
       </tr>
     `;
@@ -189,7 +182,7 @@ async function loadDashboard() {
     const { data, error } = await supabaseClient
       .from(TABLE_NAME)
       .select('*')
-      .gte('qty', LOW_STOCK_THRESHOLD)
+      .gt('qty', 0)
       .order('qty', { ascending: false });
 
     if (error) throw error;
@@ -197,8 +190,6 @@ async function loadDashboard() {
     if (!data || data.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:30px;">ยังไม่มีข้อมูล กรุณาอัปโหลดไฟล์ Excel ก่อน</td></tr>';
       document.getElementById('stat-sku').textContent = '0';
-      document.getElementById('stat-total').textContent = '0';
-      document.getElementById('stat-low').textContent = '0';
       document.getElementById('stat-updated').textContent = '-';
       return;
     }
@@ -206,16 +197,12 @@ async function loadDashboard() {
     allStockData = data;
     populateYearFilter(data);
 
-    const totalQty = data.reduce((sum, r) => sum + Number(r.qty || 0), 0);
-    const lowStock = data.filter(r => Number(r.qty || 0) < LOW_STOCK_THRESHOLD);
     const latestUpdate = data.reduce((latest, r) => {
       if (!r.updated_at) return latest;
       return (!latest || new Date(r.updated_at) > new Date(latest)) ? r.updated_at : latest;
     }, null);
 
     document.getElementById('stat-sku').textContent = data.length;
-    document.getElementById('stat-total').textContent = maskNumber(totalQty);
-    document.getElementById('stat-low').textContent = lowStock.length;
     document.getElementById('stat-updated').textContent = formatThaiDate(latestUpdate);
 
     renderRows(allStockData);
