@@ -43,9 +43,7 @@
       <option value="BLUHORSE">Bluhorse</option>
     </select>
     <select id="filter-type" style="flex:1; min-width:0; padding:9px 12px; border-radius:var(--radius); border:1px solid var(--border); font-size:13px; background:#FFFFFF; color:#1A1A1A;">
-      <option value="">ประเภททั้งหมด (MC, BC)</option>
-      <option value="MC">MC</option>
-      <option value="BC">BC</option>
+      <option value="">ประเภทสินค้าทั้งหมด</option>
     </select>
     <select id="filter-year" style="flex:1; min-width:0; padding:9px 12px; border-radius:var(--radius); border:1px solid var(--border); font-size:13px; background:#FFFFFF; color:#1A1A1A;">
       <option value="">ทุกปี</option>
@@ -58,7 +56,7 @@
         <tr>
           <th>ชื่อสินค้า</th>
           <th>ยี่ห้อ</th>
-          <th style="text-align:center;">MC/BC</th>
+          <th style="text-align:center;">ประเภทสินค้า</th>
           <th style="text-align:center;">ปี</th>
           <th style="text-align:right;">คงเหลือ</th>
           <th style="text-align:center;">สถานะ</th>
@@ -124,8 +122,9 @@ function renderRows(data) {
       : '<span class="badge badge-success">ปกติ</span>';
     const typeUpper = getType(r);
     const typeBadgeClass = typeUpper === 'BC' ? 'badge-warning' : 'badge-mc';
-    const typeBadge = typeUpper
-      ? `<span class="badge ${typeBadgeClass}">${typeUpper}</span>`
+    const fullGroup = String(r.product_group || '').trim().replace(/\s+/g, ' ');
+    const typeBadge = fullGroup
+      ? `<span class="badge ${typeBadgeClass}">${fullGroup}</span>`
       : '<span style="color:var(--text-muted);">-</span>';
     const qtyDisplay = isLow ? 'X' : maskNumber(r.qty || 0);
     const brandLower = String(r.brand || '').toLowerCase();
@@ -134,8 +133,8 @@ function renderRows(data) {
       <tr>
         <td data-label="ชื่อสินค้า" style="max-width:280px; white-space:normal;">${r.item_name || '-'}</td>
         <td data-label="ยี่ห้อ" class="${brandClass}">${r.brand || '-'}</td>
-        <td data-label="MC/BC" class="center">${typeBadge}</td>
-        <td data-label="ปี" class="center">${r.year || '-'}</td>
+        <td data-label="ประเภทสินค้า" class="center">${typeBadge}</td>
+        <td data-label="ปี" class="center"><span class="badge" style="background:var(--accent-bg); color:var(--accent); font-weight:600;">${r.year || '-'}</span></td>
         <td data-label="คงเหลือ" class="num mono">${qtyDisplay}</td>
         <td data-label="สถานะ" class="center">${statusBadge}</td>
       </tr>
@@ -159,7 +158,7 @@ function applyFilters() {
     const q1Match = !q1 || name.includes(q1);
     const q2Match = !q2 || name.includes(q2);
     const brandMatch = !brandFilter || String(r.brand || '').toLowerCase() === brandFilter.toLowerCase();
-    const typeMatch = !typeFilter || getType(r) === typeFilter.toUpperCase();
+    const typeMatch = !typeFilter || String(r.product_group || '').trim().replace(/\s+/g, ' ') === typeFilter;
     const yearMatch = !yearFilter || String(r.year || '') === yearFilter;
     return q1Match && q2Match && brandMatch && typeMatch && yearMatch;
   });
@@ -178,6 +177,13 @@ function populateYearFilter(data) {
   const years = [...new Set(data.map(r => r.year).filter(Boolean))].sort((a, b) => b - a);
   yearSelect.innerHTML = '<option value="">ทุกปี</option>' +
     years.map(y => `<option value="${y}">${y}</option>`).join('');
+}
+
+function populateTypeFilter(data) {
+  const typeSelect = document.getElementById('filter-type');
+  const groups = [...new Set(data.map(r => String(r.product_group || '').trim().replace(/\s+/g, ' ')).filter(Boolean))].sort();
+  typeSelect.innerHTML = '<option value="">ประเภทสินค้าทั้งหมด</option>' +
+    groups.map(g => `<option value="${g}">${g}</option>`).join('');
 }
 
 async function loadDashboard() {
@@ -201,6 +207,7 @@ async function loadDashboard() {
 
     allStockData = data;
     populateYearFilter(data);
+    populateTypeFilter(data);
 
     const latestUpdate = data.reduce((latest, r) => {
       if (!r.updated_at) return latest;
