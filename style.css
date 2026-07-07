@@ -1,17 +1,19 @@
 :root {
-  --bg: #F7F6F2;
-  --surface: #FFFFFF;
-  --surface-muted: #F1EFE8;
-  --border: #E3E1D8;
-  --text-primary: #26211C;
-  --text-secondary: #6B665D;
-  --text-muted: #9B9689;
-  --accent: #BA7517;
-  --accent-bg: #FAEEDA;
-  --danger: #A32D2D;
-  --danger-bg: #FCEBEB;
-  --success: #3B6D11;
-  --success-bg: #EAF3DE;
+  --bg: #0B0B0D;
+  --surface: #16171A;
+  --surface-muted: #1E1F23;
+  --border: #2B2C30;
+  --text-primary: #F2F1EC;
+  --text-secondary: #9B9A96;
+  --text-muted: #6B6A67;
+  --accent: #E0A339;
+  --accent-bg: #3A2F16;
+  --danger: #F0665F;
+  --danger-bg: #3A1E1C;
+  --success: #7BC96F;
+  --success-bg: #1C3320;
+  --brand-deestone: #E4572E;
+  --brand-bluhorse: #3B82F6;
   --radius: 10px;
   font-family: -apple-system, "Segoe UI", "Noto Sans Thai", Tahoma, sans-serif;
 }
@@ -49,7 +51,7 @@ body {
   color: var(--text-primary);
   background: var(--surface);
 }
-.nav-links a.active { background: var(--text-primary); color: #fff; border-color: var(--text-primary); }
+.nav-links a.active { background: var(--accent); color: #1A1300; border-color: var(--accent); }
 
 .container { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
 
@@ -62,7 +64,10 @@ body {
 .badge-warning { background: var(--accent-bg); color: var(--accent); }
 .badge-danger { background: var(--danger-bg); color: var(--danger); }
 .badge-success { background: var(--success-bg); color: var(--success); }
-.badge-mc { background: #E6F1FB; color: #0C447C; }
+.badge-mc { background: #16283D; color: #6EA8E8; }
+
+.brand-deestone { color: var(--brand-deestone); font-weight: 600; }
+.brand-bluhorse { color: var(--brand-bluhorse); font-weight: 600; }
 
 .stat-grid {
   display: grid;
@@ -102,14 +107,14 @@ td.center { text-align: center; }
 .dropzone .big { font-size: 15px; color: var(--text-primary); font-weight: 500; }
 
 button.primary {
-  background: var(--text-primary);
-  color: #fff;
+  background: var(--accent);
+  color: #1A1300;
   border: none;
   padding: 10px 18px;
   border-radius: var(--radius);
   font-size: 14px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
 }
 button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
 button.secondary {
@@ -152,7 +157,7 @@ footer.hint {
   .stat-card .value { font-size: 19px; }
   .stat-card .label { font-size: 11px; }
 
-  /* Table becomes stacked cards on mobile */
+  /* Generic table-to-card fallback (used by upload.html preview table) */
   .table-wrap { border: none; background: transparent; }
   table, thead, tbody, th, td, tr { display: block; width: 100%; }
   thead tr { position: absolute; top: -9999px; left: -9999px; }
@@ -180,6 +185,40 @@ footer.hint {
     color: var(--text-secondary);
     flex-shrink: 0;
   }
+
+  /* Dashboard table: override with condensed 2-line card layout */
+  #stock-body tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+
+  #stock-body td {
+    padding: 0;
+    font-size: 12px;
+    display: block;
+  }
+
+  /* Line 1: item name, full width, single line, truncated */
+  #stock-body td[data-label="ชื่อสินค้า"] {
+    order: 1;
+    flex: 1 1 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-bottom: 4px;
+    font-size: 12.5px;
+  }
+
+  /* Line 2: brand, MC/BC, year, qty, status all inline together */
+  #stock-body td[data-label="ยี่ห้อ"] { order: 2; padding-right: 6px; font-size: 12px; }
+  #stock-body td[data-label="MC/BC"] { order: 3; padding-right: 6px; }
+  #stock-body td[data-label="ปี"] { order: 4; padding-right: 6px; color: var(--text-muted); font-size: 11px; }
+  #stock-body td[data-label="คงเหลือ"] { order: 5; margin-left: auto; padding-right: 6px; }
+  #stock-body td[data-label="สถานะ"] { order: 6; padding-right: 0; }
+  #stock-body td::before { content: none; }
 
   .dropzone { padding: 32px 14px; }
   .dropzone .big { font-size: 14px; }
