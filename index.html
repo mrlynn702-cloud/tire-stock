@@ -1,248 +1,259 @@
-:root {
-  --bg: #0B0B0D;
-  --surface: #16171A;
-  --surface-muted: #1E1F23;
-  --border: #2B2C30;
-  --text-primary: #F2F1EC;
-  --text-secondary: #9B9A96;
-  --text-muted: #6B6A67;
-  --accent: #E0A339;
-  --accent-bg: #3A2F16;
-  --danger: #F0665F;
-  --danger-bg: #3A1E1C;
-  --success: #7BC96F;
-  --success-bg: #1C3320;
-  --brand-deestone: #E4572E;
-  --brand-bluhorse: #3B82F6;
-  --radius: 10px;
-  font-family: -apple-system, "Segoe UI", "Noto Sans Thai", Tahoma, sans-serif;
-}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>สต๊อกคงเหลือยาง - Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-* { box-sizing: border-box; }
+<div class="topbar">
+  <div>
+    <p class="title">สต๊อกยาง</p>
+  </div>
+  <div class="nav-links">
+    <a href="index.html" class="active">Dashboard</a>
+    <a href="upload.html">อัปโหลดข้อมูล</a>
+  </div>
+</div>
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text-primary);
-  min-height: 100vh;
-}
+<div class="container">
 
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 28px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
-  gap: 10px;
-}
+  <div class="stat-grid">
+    <div class="stat-card">
+      <p class="label">SKU ทั้งหมด</p>
+      <p class="value" id="stat-sku">-</p>
+    </div>
+    <div class="stat-card">
+      <p class="label">อัปเดตล่าสุด</p>
+      <p class="value" id="stat-updated" style="font-size:15px;">-</p>
+    </div>
+  </div>
 
-.topbar .title { font-size: 17px; font-weight: 600; margin: 0; }
-.topbar .subtitle { font-size: 13px; color: var(--text-secondary); margin: 2px 0 0; }
+  <div class="search-row" style="display:flex; gap:10px; margin-bottom:10px;">
+    <input type="text" id="search-1" placeholder="ค้นหาเบอร์ยาง เช่น 2.50-17" style="flex:1; min-width:0; padding:9px 12px; border-radius:var(--radius); border:1px solid var(--border); font-size:13px; background:#FFFFFF; color:#1A1A1A;">
+    <input type="text" id="search-2" placeholder="ค้นหาลายยาง เช่น D793" style="flex:1; min-width:0; padding:9px 12px; border-radius:var(--radius); border:1px solid var(--border); font-size:13px; background:#FFFFFF; color:#1A1A1A;">
+  </div>
 
-.nav-links { display: flex; gap: 8px; }
-.nav-links a {
-  text-decoration: none;
-  font-size: 13px;
-  padding: 8px 14px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  background: var(--surface);
-}
-.nav-links a.active { background: var(--accent); color: #1A1300; border-color: var(--accent); }
+  <div class="filter-row" style="display:flex; gap:8px; margin-bottom:14px;">
+    <select id="filter-brand" style="flex:1; min-width:0; padding:9px 12px; border-radius:var(--radius); border:1px solid var(--border); font-size:13px; background:#FFFFFF; color:#1A1A1A;">
+      <option value="">ยี่ห้อทั้งหมด</option>
+      <option value="Deestone">Deestone</option>
+      <option value="BLUHORSE">Bluhorse</option>
+    </select>
+    <select id="filter-type" style="flex:1; min-width:0; padding:9px 12px; border-radius:var(--radius); border:1px solid var(--border); font-size:13px; background:#FFFFFF; color:#1A1A1A;">
+      <option value="">ประเภทสินค้าทั้งหมด</option>
+    </select>
+  </div>
 
-.container { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ชื่อสินค้า</th>
+          <th>ยี่ห้อ</th>
+          <th style="text-align:center;">ประเภทสินค้า</th>
+          <th style="text-align:center;">สถานะ</th>
+        </tr>
+      </thead>
+      <tbody id="stock-body">
+        <tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:30px;">กำลังโหลดข้อมูล...</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-.badge {
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: var(--radius);
-  font-weight: 500;
-}
-.badge-warning { background: var(--accent-bg); color: var(--accent); }
-.badge-danger { background: var(--danger-bg); color: var(--danger); }
-.badge-success { background: var(--success-bg); color: var(--success); }
-.badge-mc { background: #16283D; color: #6EA8E8; }
+  <p id="no-results" style="display:none; text-align:center; color:var(--text-muted); font-size:13px; padding:20px 0;">ไม่พบรายการที่ตรงกับคำค้นหา</p>
 
-.brand-deestone { color: var(--brand-deestone); font-weight: 600; }
-.brand-bluhorse { color: var(--brand-bluhorse); font-weight: 600; }
+  <footer class="hint">
+    สถานะ "Available" (เขียว) หรือ "ติดต่อ CS" (แดง) พิจารณาจากเกณฑ์จำนวนคงเหลือขั้นต่ำของแต่ละประเภทสินค้า
+  </footer>
 
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-  margin: 20px 0;
-}
-.stat-card {
-  background: var(--surface-muted);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-.stat-card .label { font-size: 13px; color: var(--text-secondary); margin: 0 0 6px; }
-.stat-card .value { font-size: 24px; font-weight: 600; margin: 0; }
-.mono { font-family: "SFMono-Regular", Consolas, monospace; letter-spacing: 1px; }
+</div>
 
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-thead tr { background: var(--surface-muted); }
-th { text-align: left; padding: 10px 12px; font-weight: 500; color: var(--text-secondary); }
-td { padding: 10px 12px; border-top: 1px solid var(--border); }
-td.num { text-align: right; }
-td.center { text-align: center; }
+<div style="text-align:center; padding:20px 12px 30px; font-size:12px; color:var(--text-muted);">
+  © 2026 Deestone Co., Ltd. | Tire Stock Tracker | Developed by Apiwich Ruangsrisoragrai — 2W
+</div>
 
-.dropzone {
-  border: 2px dashed var(--border);
-  border-radius: 12px;
-  padding: 48px 20px;
-  text-align: center;
-  color: var(--text-secondary);
-  background: var(--surface);
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-.dropzone.dragover { border-color: var(--accent); background: var(--accent-bg); }
-.dropzone p { margin: 6px 0; }
-.dropzone .big { font-size: 15px; color: var(--text-primary); font-weight: 500; }
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+let allStockData = [];
 
-button.primary {
-  background: var(--accent);
-  color: #1A1300;
-  border: none;
-  padding: 10px 18px;
-  border-radius: var(--radius);
-  font-size: 14px;
-  cursor: pointer;
-  font-weight: 600;
-}
-button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
-button.secondary {
-  background: var(--surface);
-  color: var(--text-primary);
-  border: 1px solid var(--border);
-  padding: 10px 18px;
-  border-radius: var(--radius);
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.status-msg { font-size: 13px; margin-top: 12px; padding: 10px 14px; border-radius: var(--radius); display: none; }
-.status-msg.show { display: block; }
-.status-msg.ok { background: var(--success-bg); color: var(--success); }
-.status-msg.err { background: var(--danger-bg); color: var(--danger); }
-
-footer.hint {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 16px;
-}
-
-/* ============ Mobile ============ */
-@media (max-width: 600px) {
-  .topbar {
-    padding: 12px 16px;
+// เกณฑ์จำนวนคงเหลือขั้นต่ำ ตามประเภทสินค้า
+// [MC/BC, TIRE/TUBE, subtype T/T or T/L (เฉพาะ MC TIRE)] -> threshold
+function getThreshold(brandType, category, subtype) {
+  if (brandType === 'MC' && category === 'TIRE') {
+    if (subtype === 'T/L') return 500;
+    return 1000; // default / T/T
   }
-  .topbar .title { font-size: 15px; }
-  .topbar .subtitle { font-size: 12px; }
-  .nav-links a { padding: 7px 10px; font-size: 12px; }
+  if (brandType === 'MC' && category === 'TUBE') return 10000;
+  if (brandType === 'BC' && category === 'TIRE') return 1000;
+  if (brandType === 'BC' && category === 'TUBE') return 5000;
+  if (category === 'RIM TAPE') return 4800;
+  return 500; // fallback for anything else unrecognized
+}
 
-  .container { padding: 16px 12px 40px; }
+function getCategory(productGroup) {
+  const parts = String(productGroup || '').trim().toUpperCase().split(/\s+/);
+  const brandType = parts[0] || '';
+  const category = parts.slice(1).join(' ').includes('TUBE') ? 'TUBE'
+    : parts.slice(1).join(' ').includes('TIRE') ? 'TIRE'
+    : parts.slice(1).join(' ');
+  return { brandType, category };
+}
 
-  .stat-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+function getSubtype(itemName) {
+  const name = String(itemName || '').toUpperCase();
+  if (name.includes('T/L')) return 'T/L';
+  if (name.includes('T/T')) return 'T/T';
+  return '';
+}
+
+function formatThaiDate(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function renderRows(data) {
+  const tbody = document.getElementById('stock-body');
+  const noResults = document.getElementById('no-results');
+
+  if (data.length === 0) {
+    tbody.innerHTML = '';
+    noResults.style.display = 'block';
+    return;
   }
-  .stat-card { padding: 12px; }
-  .stat-card .value { font-size: 19px; }
-  .stat-card .label { font-size: 11px; }
+  noResults.style.display = 'none';
 
-  /* Generic table-to-card fallback (used by upload.html preview table) */
-  .table-wrap { border: none; background: transparent; }
-  table, thead, tbody, th, td, tr { display: block; width: 100%; }
-  thead tr { position: absolute; top: -9999px; left: -9999px; }
+  tbody.innerHTML = data.map(r => {
+    const { brandType, category } = getCategory(r.product_group);
+    const subtype = getSubtype(r.item_name);
+    const threshold = getThreshold(brandType, category, subtype);
+    const isAvailable = Number(r.qty || 0) > threshold;
+    const statusBadge = isAvailable
+      ? '<span class="badge badge-success">Available</span>'
+      : '<span class="badge badge-danger">ติดต่อ CS</span>';
+    const typeBadgeClass = brandType === 'BC' ? 'badge-warning' : 'badge-mc';
+    const fullGroup = String(r.product_group || '').trim().replace(/\s+/g, ' ');
+    const typeBadge = fullGroup
+      ? `<span class="badge ${typeBadgeClass}">${fullGroup}</span>`
+      : '<span style="color:var(--text-muted);">-</span>';
+    const brandLower = String(r.brand || '').toLowerCase();
+    const brandClass = brandLower.includes('blu') ? 'brand-bluhorse' : brandLower.includes('dee') ? 'brand-deestone' : '';
+    return `
+      <tr>
+        <td data-label="ชื่อสินค้า" style="max-width:280px; white-space:normal;">${r.item_name || '-'}</td>
+        <td data-label="ยี่ห้อ" class="${brandClass}">${r.brand || '-'}</td>
+        <td data-label="ประเภทสินค้า" class="center">${typeBadge}</td>
+        <td data-label="สถานะ" class="center">${statusBadge}</td>
+      </tr>
+    `;
+  }).join('');
+}
 
-  tbody tr {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    margin-bottom: 10px;
-    padding: 10px 12px;
-  }
-  tbody td {
-    border-top: none;
-    padding: 4px 0;
-    text-align: left !important;
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 13px;
-  }
-  tbody td.center { justify-content: flex-start; }
-  tbody td::before {
-    content: attr(data-label);
-    font-weight: 500;
-    color: var(--text-secondary);
-    flex-shrink: 0;
-  }
+function applyFilters() {
+  const q1 = document.getElementById('search-1').value.trim().toLowerCase();
+  const q2 = document.getElementById('search-2').value.trim().toLowerCase();
+  const brandFilter = document.getElementById('filter-brand').value;
+  const typeFilter = document.getElementById('filter-type').value;
 
-  /* Dashboard table: override with condensed 2-line card layout */
-  #stock-body tr {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    padding: 8px 10px;
-    margin-bottom: 8px;
-  }
+  const filtered = allStockData.filter(r => {
+    const name = String(r.item_name || '').toLowerCase();
+    const q1Match = !q1 || name.includes(q1);
+    const q2Match = !q2 || name.includes(q2);
+    const brandMatch = !brandFilter || String(r.brand || '').toLowerCase() === brandFilter.toLowerCase();
+    const typeMatch = !typeFilter || String(r.product_group || '').trim().replace(/\s+/g, ' ') === typeFilter;
+    return q1Match && q2Match && brandMatch && typeMatch;
+  });
 
-  #stock-body td {
-    padding: 0;
-    font-size: 12px;
-    display: block;
-    width: auto;
-    flex: 0 0 auto;
-  }
+  renderRows(filtered);
+}
 
-  /* Line 1: item name, full width, single line, truncated */
-  #stock-body td[data-label="ชื่อสินค้า"] {
-    order: 1;
-    flex: 1 1 100%;
-    width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-bottom: 4px;
-    font-size: 12.5px;
-  }
+document.getElementById('search-1').addEventListener('input', applyFilters);
+document.getElementById('search-2').addEventListener('input', applyFilters);
+document.getElementById('filter-brand').addEventListener('change', applyFilters);
+document.getElementById('filter-type').addEventListener('change', applyFilters);
 
-  /* Line 2: brand, product type, year, qty, status all inline together on one row */
-  #stock-body td[data-label="ยี่ห้อ"] { order: 2; padding-right: 6px; font-size: 11.5px; white-space: nowrap; }
-  #stock-body td[data-label="ประเภทสินค้า"] { order: 3; padding-right: 6px; }
-  #stock-body td[data-label="ประเภทสินค้า"] .badge { font-size: 10px; padding: 2px 6px; white-space: nowrap; }
-  #stock-body td[data-label="สถานะ"] { order: 4; margin-left: auto; padding-right: 0; }
-  #stock-body td[data-label="สถานะ"] .badge { font-size: 10px; padding: 2px 6px; white-space: nowrap; }
-  #stock-body td::before { content: none; }
+function populateTypeFilter(data) {
+  const typeSelect = document.getElementById('filter-type');
+  const groups = [...new Set(data.map(r => String(r.product_group || '').trim().replace(/\s+/g, ' ')).filter(Boolean))].sort();
+  typeSelect.innerHTML = '<option value="">ประเภทสินค้าทั้งหมด</option>' +
+    groups.map(g => `<option value="${g}">${g}</option>`).join('');
+}
 
-  .dropzone { padding: 32px 14px; }
-  .dropzone .big { font-size: 14px; }
+function groupDuplicates(data) {
+  const map = new Map();
+  const normalizeName = (name) => String(name || '')
+    .replace(/\s*\(พันฟอยด์\)\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
-  #preview-section .table-wrap { border: none; }
+  data.forEach(r => {
+    const key = [
+      normalizeName(r.item_name),
+      String(r.brand || '').trim().toLowerCase(),
+      String(r.product_group || '').trim().replace(/\s+/g, ' ')
+    ].join('||');
 
-  button.primary, button.secondary {
-    padding: 10px 14px;
-    font-size: 13px;
-    width: 100%;
-  }
+    if (map.has(key)) {
+      const existing = map.get(key);
+      existing.qty = Number(existing.qty || 0) + Number(r.qty || 0);
+      if (r.updated_at && (!existing.updated_at || new Date(r.updated_at) > new Date(existing.updated_at))) {
+        existing.updated_at = r.updated_at;
+      }
+    } else {
+      map.set(key, { ...r, item_name: normalizeName(r.item_name) });
+    }
+  });
+  return [...map.values()].sort((a, b) => Number(b.qty || 0) - Number(a.qty || 0));
+}
 
-  .search-row input {
-    font-size: 12px;
-    padding: 8px 10px;
-  }
+async function loadDashboard() {
+  const tbody = document.getElementById('stock-body');
 
-  .filter-row select {
-    flex: 1 1 0;
-    min-width: 0;
-    font-size: 11px;
-    padding: 7px 6px;
+  try {
+    const { data, error } = await supabaseClient
+      .from(TABLE_NAME)
+      .select('*')
+      .gt('qty', 0)
+      .not('item_name', 'ilike', '%เปลือย%')
+      .order('qty', { ascending: false });
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:30px;">ยังไม่มีข้อมูล กรุณาอัปโหลดไฟล์ Excel ก่อน</td></tr>';
+      document.getElementById('stat-sku').textContent = '0';
+      document.getElementById('stat-updated').textContent = '-';
+      return;
+    }
+
+    const grouped = groupDuplicates(data);
+    allStockData = grouped;
+    populateTypeFilter(grouped);
+
+    const latestUpdate = grouped.reduce((latest, r) => {
+      if (!r.updated_at) return latest;
+      return (!latest || new Date(r.updated_at) > new Date(latest)) ? r.updated_at : latest;
+    }, null);
+
+    document.getElementById('stat-sku').textContent = grouped.length;
+    document.getElementById('stat-updated').textContent = formatThaiDate(latestUpdate);
+
+    renderRows(allStockData);
+
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--danger); padding:30px;">
+      โหลดข้อมูลไม่สำเร็จ: ${err.message || 'ตรวจสอบการตั้งค่า Supabase ใน config.js'}
+    </td></tr>`;
   }
 }
+
+loadDashboard();
+</script>
+
+</body>
+</html>
