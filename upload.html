@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>อัปโหลดข้อมูลสต๊อกยาง</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <p class="title">อัปโหลดข้อมูลสต๊อกยาง</p>
+    <p class="subtitle">ทีมเกราะข้อมูลยาง · Deestone / Bluhorse</p>
+  </div>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="upload.html" class="active">อัปโหลดข้อมูล</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div id="dropzone" class="dropzone">
+    <p class="big">ลากไฟล์ Excel มาวางตรงนี้</p>
+    <p>หรือคลิกเพื่อเลือกไฟล์ (.xlsx, .xls)</p>
+    <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none;">
+  </div>
+
+  <div id="status-msg" class="status-msg"></div>
+
+  <div id="preview-section" style="display:none; margin-top:24px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+      <p style="font-size:15px; font-weight:600; margin:0;">ตรวจสอบข้อมูลก่อนอัปโหลด (<span id="row-count">0</span> รายการ)</p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; width:100%;">
+        <button class="secondary" id="cancel-btn" style="flex:1; min-width:100px;">ยกเลิก</button>
+        <button class="primary" id="confirm-btn" style="flex:1; min-width:140px;">ยืนยันอัปโหลด</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ชื่อสินค้า</th>
+            <th>ยี่ห้อ</th>
+            <th>ประเภท</th>
+            <th style="text-align:center;">ปี</th>
+            <th style="text-align:right;">จำนวน</th>
+          </tr>
+        </thead>
+        <tbody id="preview-body"></tbody>
+      </table>
+    </div>
+    <footer class="hint">
+      การยืนยันจะ<strong>แทนที่ข้อมูลทั้งหมด</strong>ในตารางด้วยรายการชุดนี้ (ของเดิมจะถูกลบ)
+    </footer>
+  </div>
+
+  <footer class="hint" style="margin-top:24px;">
+    รูปแบบคอลัมน์ในไฟล์ Excel ที่รองรับ (แถวแรกเป็นหัวตาราง): <code>Item name thai, Brand, Product group 2, Year, Available</code>
+    (ระบบจะอ่านจากคอลัมน์ C, E, H, O, T ตามลำดับ)
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+const statusMsg = document.getElementById('status-msg');
+const previewSection = document.getElementById('preview-section');
+const previewBody = document.getElementById('preview-body');
+const rowCount = document.getElementById('row-count');
+const confirmBtn = document.getElementById('confirm-btn');
+const cancelBtn = document.getElementById('cancel-btn');
+
+let parsedRows = [];
+
+const COLUMN_MAP = {
+  item_name: ['item name thai', 'item name', 'ชื่อสินค้า'],
+  brand: ['brand', 'ยี่ห้อ'],
+  product_group: ['product group 2', 'product group', 'ประเภทสินค้า'],
+  year: ['year', 'ปี'],
+  qty: ['available', 'qty', 'จำนวน', 'คงเหลือ'],
+};
+
+function normalizeKey(key) {
+  return String(key).trim().toLowerCase();
+}
+
+function mapRow(rawRow) {
+  const result = {};
+  const lowerRow = {};
+  Object.keys(rawRow).forEach(k => { lowerRow[normalizeKey(k)] = rawRow[k]; });
+
+  for (const field in COLUMN_MAP) {
+    for (const alias of COLUMN_MAP[field]) {
+      const key = normalizeKey(alias);
+      if (lowerRow[key] !== undefined) {
+        result[field] = lowerRow[key];
+        break;
+      }
+    }
+  }
+  if (result.qty !== undefined) result.qty = Number(result.qty) || 0;
+  if (result.year !== undefined) result.year = Number(result.year) || null;
+  if (result.item_name !== undefined) {
+    const keepList = ['1x50', '1x100', '1x200', '1x20', '1x10', '1x5', '1x25', '1x800'];
+    result.item_name = String(result.item_name).replace(/\s*\[([^\]]*)\]/g, (match, inner) => {
+      const normalized = inner.trim().toLowerCase();
+      return keepList.includes(normalized) ? ' [' + inner.trim() + ']' : '';
+    }).replace(/\s+/g, ' ').trim();
+  }
+  return result;
+}
+
+function showStatus(message, type) {
+  statusMsg.textContent = message;
+  statusMsg.className = `status-msg show ${type}`;
+}
+
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+      parsedRows = rawRows.map(mapRow).filter(r => r.item_name && r.brand);
+
+      if (parsedRows.length === 0) {
+        showStatus('ไม่พบข้อมูลที่อ่านได้ ตรวจสอบชื่อหัวตารางในไฟล์ Excel', 'err');
+        previewSection.style.display = 'none';
+        return;
+      }
+
+      renderPreview();
+      statusMsg.className = 'status-msg';
+    } catch (err) {
+      console.error(err);
+      showStatus('อ่านไฟล์ไม่สำเร็จ: ' + err.message, 'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function renderPreview() {
+  rowCount.textContent = parsedRows.length;
+  previewBody.innerHTML = parsedRows.map(r => `
+    <tr>
+      <td data-label="ชื่อสินค้า" style="max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.item_name || '-'}</td>
+      <td data-label="ยี่ห้อ">${r.brand || '-'}</td>
+      <td data-label="ประเภท" style="color:var(--text-secondary);">${r.product_group || '-'}</td>
+      <td data-label="ปี" class="center">${r.year || '-'}</td>
+      <td data-label="จำนวน" class="num mono">${r.qty ?? 0}</td>
+    </tr>
+  `).join('');
+  previewSection.style.display = 'block';
+}
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  handleFile(file);
+});
+fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+cancelBtn.addEventListener('click', () => {
+  parsedRows = [];
+  previewSection.style.display = 'none';
+  fileInput.value = '';
+  statusMsg.className = 'status-msg';
+});
+
+confirmBtn.addEventListener('click', async () => {
+  if (parsedRows.length === 0) return;
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'กำลังอัปโหลด...';
+
+  try {
+    // แทนที่ข้อมูลทั้งหมด: ลบของเก่าก่อน แล้วเขียนชุดใหม่เข้าไป
+    const { error: deleteError } = await supabaseClient
+      .from(TABLE_NAME)
+      .delete()
+      .neq('id', 0); // ลบทุกแถว (ปรับเงื่อนไขตาม primary key จริงถ้าจำเป็น)
+
+    if (deleteError) throw deleteError;
+
+    const rowsWithTimestamp = parsedRows.map(r => ({
+      ...r,
+      updated_at: new Date().toISOString(),
+    }));
+
+    const { error: insertError } = await supabaseClient
+      .from(TABLE_NAME)
+      .insert(rowsWithTimestamp);
+
+    if (insertError) throw insertError;
+
+    showStatus(`อัปโหลดสำเร็จ ${parsedRows.length} รายการ`, 'ok');
+    previewSection.style.display = 'none';
+    parsedRows = [];
+    fileInput.value = '';
+
+  } catch (err) {
+    console.error(err);
+    showStatus('อัปโหลดไม่สำเร็จ: ' + (err.message || 'ตรวจสอบการตั้งค่า Supabase ใน config.js'), 'err');
+  } finally {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'ยืนยันอัปโหลด';
+  }
+});
+</script>
+
+</body>
+</html>
