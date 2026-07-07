@@ -186,6 +186,29 @@ function populateTypeFilter(data) {
     groups.map(g => `<option value="${g}">${g}</option>`).join('');
 }
 
+function groupDuplicates(data) {
+  const map = new Map();
+  data.forEach(r => {
+    const key = [
+      String(r.item_name || '').trim(),
+      String(r.brand || '').trim().toLowerCase(),
+      String(r.product_group || '').trim().replace(/\s+/g, ' '),
+      r.year || ''
+    ].join('||');
+
+    if (map.has(key)) {
+      const existing = map.get(key);
+      existing.qty = Number(existing.qty || 0) + Number(r.qty || 0);
+      if (r.updated_at && (!existing.updated_at || new Date(r.updated_at) > new Date(existing.updated_at))) {
+        existing.updated_at = r.updated_at;
+      }
+    } else {
+      map.set(key, { ...r });
+    }
+  });
+  return [...map.values()].sort((a, b) => Number(b.qty || 0) - Number(a.qty || 0));
+}
+
 async function loadDashboard() {
   const tbody = document.getElementById('stock-body');
 
@@ -206,16 +229,17 @@ async function loadDashboard() {
       return;
     }
 
-    allStockData = data;
-    populateYearFilter(data);
-    populateTypeFilter(data);
+    const grouped = groupDuplicates(data);
+    allStockData = grouped;
+    populateYearFilter(grouped);
+    populateTypeFilter(grouped);
 
-    const latestUpdate = data.reduce((latest, r) => {
+    const latestUpdate = grouped.reduce((latest, r) => {
       if (!r.updated_at) return latest;
       return (!latest || new Date(r.updated_at) > new Date(latest)) ? r.updated_at : latest;
     }, null);
 
-    document.getElementById('stat-sku').textContent = data.length;
+    document.getElementById('stat-sku').textContent = grouped.length;
     document.getElementById('stat-updated').textContent = formatThaiDate(latestUpdate);
 
     renderRows(allStockData);
