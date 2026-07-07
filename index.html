@@ -82,7 +82,7 @@
   <p id="no-results" style="display:none; text-align:center; color:var(--text-muted); font-size:13px; padding:20px 0;">ไม่พบรายการที่ตรงกับคำค้นหา</p>
 
   <footer class="hint">
-    จำนวนคงเหลือถูกปิดบังด้วย X ตามจำนวนหลักของตัวเลขจริง เพื่อความเป็นส่วนตัวของข้อมูลสต๊อก · เกณฑ์ "ใกล้หมด" คือน้อยกว่า 10 เส้น
+    จำนวนคงเหลือถูกปิดบังด้วย X ตามจำนวนหลักของตัวเลขจริง เพื่อความเป็นส่วนตัวของข้อมูลสต๊อก · เกณฑ์ "ใกล้หมด" คือน้อยกว่า 5 เส้น
   </footer>
 
 </div>
@@ -90,7 +90,7 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script>
-const LOW_STOCK_THRESHOLD = 10;
+const LOW_STOCK_THRESHOLD = 5;
 let allStockData = [];
 
 function maskNumber(n) {
@@ -189,8 +189,8 @@ async function loadDashboard() {
     const { data, error } = await supabaseClient
       .from(TABLE_NAME)
       .select('*')
-      .gt('qty', 0)
-      .order('qty', { ascending: true });
+      .gte('qty', LOW_STOCK_THRESHOLD)
+      .order('qty', { ascending: false });
 
     if (error) throw error;
 
