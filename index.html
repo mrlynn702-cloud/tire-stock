@@ -194,6 +194,7 @@ async function loadDashboard() {
       .from(TABLE_NAME)
       .select('*')
       .gt('qty', 0)
+      .not('item_name', 'ilike', '%เปลือย%')
       .order('qty', { ascending: false });
 
     if (error) throw error;
