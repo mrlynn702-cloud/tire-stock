@@ -188,9 +188,14 @@ function populateTypeFilter(data) {
 
 function groupDuplicates(data) {
   const map = new Map();
+  const normalizeName = (name) => String(name || '')
+    .replace(/\s*\(พันฟอยด์\)\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
   data.forEach(r => {
     const key = [
-      String(r.item_name || '').trim(),
+      normalizeName(r.item_name),
       String(r.brand || '').trim().toLowerCase(),
       String(r.product_group || '').trim().replace(/\s+/g, ' '),
       r.year || ''
@@ -203,7 +208,7 @@ function groupDuplicates(data) {
         existing.updated_at = r.updated_at;
       }
     } else {
-      map.set(key, { ...r });
+      map.set(key, { ...r, item_name: normalizeName(r.item_name) });
     }
   });
   return [...map.values()].sort((a, b) => Number(b.qty || 0) - Number(a.qty || 0));
