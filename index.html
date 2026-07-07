@@ -137,9 +137,10 @@ function renderRows(data) {
     const subtype = getSubtype(r.item_name);
     const threshold = getThreshold(brandType, category, subtype);
     const isAvailable = Number(r.qty || 0) > threshold;
+    const thresholdDisplay = threshold.toLocaleString('en-US');
     const statusBadge = isAvailable
-      ? '<span class="badge badge-success">Available</span>'
-      : '<span class="badge badge-danger">ติดต่อ CS</span>';
+      ? `<span class="badge badge-success">${thresholdDisplay}+ Available</span>`
+      : `<span class="badge badge-danger">${thresholdDisplay}- ติดต่อ CS</span>`;
     const typeBadgeClass = brandType === 'BC' ? 'badge-warning' : 'badge-mc';
     const fullGroup = String(r.product_group || '').trim().replace(/\s+/g, ' ');
     const typeBadge = fullGroup
