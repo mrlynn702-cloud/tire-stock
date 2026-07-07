@@ -189,6 +189,7 @@ async function loadDashboard() {
     const { data, error } = await supabaseClient
       .from(TABLE_NAME)
       .select('*')
+      .gt('qty', 0)
       .order('qty', { ascending: true });
 
     if (error) throw error;
