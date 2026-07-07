@@ -128,10 +128,12 @@ function renderRows(data) {
       ? `<span class="badge ${typeBadgeClass}">${typeUpper}</span>`
       : '<span style="color:var(--text-muted);">-</span>';
     const qtyDisplay = isLow ? 'X' : maskNumber(r.qty || 0);
+    const brandLower = String(r.brand || '').toLowerCase();
+    const brandClass = brandLower.includes('blu') ? 'brand-bluhorse' : brandLower.includes('dee') ? 'brand-deestone' : '';
     return `
       <tr>
         <td data-label="ชื่อสินค้า" style="max-width:280px; white-space:normal;">${r.item_name || '-'}</td>
-        <td data-label="ยี่ห้อ" style="color:var(--text-secondary);">${r.brand || '-'}</td>
+        <td data-label="ยี่ห้อ" class="${brandClass}">${r.brand || '-'}</td>
         <td data-label="MC/BC" class="center">${typeBadge}</td>
         <td data-label="ปี" class="center">${r.year || '-'}</td>
         <td data-label="คงเหลือ" class="num mono">${qtyDisplay}</td>
