@@ -45,6 +45,11 @@
     <select id="filter-type" style="flex:1; min-width:0; padding:9px 12px; border-radius:var(--radius); border:1px solid var(--border); font-size:13px; background:#FFFFFF; color:#1A1A1A;">
       <option value="">ประเภทสินค้าทั้งหมด</option>
     </select>
+    <select id="filter-subtype" style="flex:1; min-width:0; padding:9px 12px; border-radius:var(--radius); border:1px solid var(--border); font-size:13px; background:#FFFFFF; color:#1A1A1A;">
+      <option value="">ชนิดทั้งหมด (T/T, T/L)</option>
+      <option value="T/T">T/T</option>
+      <option value="T/L">T/L</option>
+    </select>
   </div>
 
   <div class="table-wrap">
@@ -158,6 +163,7 @@ function applyFilters() {
   const q2 = document.getElementById('search-2').value.trim().toLowerCase();
   const brandFilter = document.getElementById('filter-brand').value;
   const typeFilter = document.getElementById('filter-type').value;
+  const subtypeFilter = document.getElementById('filter-subtype').value;
 
   const filtered = allStockData.filter(r => {
     const name = String(r.item_name || '').toLowerCase();
@@ -165,7 +171,8 @@ function applyFilters() {
     const q2Match = !q2 || name.includes(q2);
     const brandMatch = !brandFilter || String(r.brand || '').toLowerCase() === brandFilter.toLowerCase();
     const typeMatch = !typeFilter || String(r.product_group || '').trim().replace(/\s+/g, ' ') === typeFilter;
-    return q1Match && q2Match && brandMatch && typeMatch;
+    const subtypeMatch = !subtypeFilter || getSubtype(r.item_name) === subtypeFilter;
+    return q1Match && q2Match && brandMatch && typeMatch && subtypeMatch;
   });
 
   renderRows(filtered);
@@ -175,6 +182,7 @@ document.getElementById('search-1').addEventListener('input', applyFilters);
 document.getElementById('search-2').addEventListener('input', applyFilters);
 document.getElementById('filter-brand').addEventListener('change', applyFilters);
 document.getElementById('filter-type').addEventListener('change', applyFilters);
+document.getElementById('filter-subtype').addEventListener('change', applyFilters);
 
 function populateTypeFilter(data) {
   const typeSelect = document.getElementById('filter-type');
