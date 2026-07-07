@@ -214,7 +214,7 @@ footer.hint {
 
   /* Line 2: brand, MC/BC, year, qty, status all inline together */
   #stock-body td[data-label="ยี่ห้อ"] { order: 2; padding-right: 6px; font-size: 12px; }
-  #stock-body td[data-label="MC/BC"] { order: 3; padding-right: 6px; }
+  #stock-body td[data-label="ประเภทสินค้า"] { order: 3; padding-right: 6px; }
   #stock-body td[data-label="ปี"] { order: 4; padding-right: 6px; color: var(--text-muted); font-size: 11px; }
   #stock-body td[data-label="คงเหลือ"] { order: 5; margin-left: auto; padding-right: 6px; }
   #stock-body td[data-label="สถานะ"] { order: 6; padding-right: 0; }
