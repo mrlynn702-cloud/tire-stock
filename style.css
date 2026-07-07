@@ -1,20 +1,40 @@
+/* ============================================================
+   Tire Stock Tracker — Dark theme, mobile-responsive
+   ============================================================ */
+
 :root {
+  /* พื้นหลัง / เส้นขอบ */
   --bg: #0B0B0D;
   --surface: #16171A;
   --surface-muted: #1E1F23;
   --border: #2B2C30;
+
+  /* ตัวอักษร */
   --text-primary: #F2F1EC;
   --text-secondary: #9B9A96;
   --text-muted: #6B6A67;
+
+  /* สีเน้น / สถานะ */
   --accent: #E0A339;
   --accent-bg: #3A2F16;
+  --accent-ink: #1A1300;
   --danger: #F0665F;
   --danger-bg: #3A1E1C;
   --success: #7BC96F;
   --success-bg: #1C3320;
+
+  /* สีประจำยี่ห้อ */
   --brand-deestone: #E4572E;
   --brand-bluhorse: #3B82F6;
+
+  /* badge MC */
+  --mc-bg: #16283D;
+  --mc-fg: #6EA8E8;
+
   --radius: 10px;
+  --field-bg: #FFFFFF;
+  --field-ink: #1A1A1A;
+
   font-family: -apple-system, "Segoe UI", "Noto Sans Thai", Tahoma, sans-serif;
 }
 
@@ -22,231 +42,241 @@
 
 body {
   margin: 0;
+  min-height: 100vh;
   background: var(--bg);
   color: var(--text-primary);
-  min-height: 100vh;
 }
 
+/* ─── Top bar ─────────────────────────────────────────────── */
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
   padding: 16px 28px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
-  gap: 10px;
 }
-
-.topbar .title { font-size: 17px; font-weight: 600; margin: 0; }
-.topbar .subtitle { font-size: 13px; color: var(--text-secondary); margin: 2px 0 0; }
+.topbar .title { margin: 0; font-size: 17px; font-weight: 600; }
+.topbar .subtitle { margin: 2px 0 0; font-size: 13px; color: var(--text-secondary); }
 
 .nav-links { display: flex; gap: 8px; }
 .nav-links a {
-  text-decoration: none;
-  font-size: 13px;
   padding: 8px 14px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
+  font-size: 13px;
+  text-decoration: none;
   color: var(--text-primary);
   background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
-.nav-links a.active { background: var(--accent); color: #1A1300; border-color: var(--accent); }
+.nav-links a.active {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
 
 .container { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
 
-.badge {
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: var(--radius);
-  font-weight: 500;
-}
-.badge-warning { background: var(--accent-bg); color: var(--accent); }
-.badge-danger { background: var(--danger-bg); color: var(--danger); }
-.badge-success { background: var(--success-bg); color: var(--success); }
-.badge-mc { background: #16283D; color: #6EA8E8; }
-
-.brand-deestone { color: var(--brand-deestone); font-weight: 600; }
-.brand-bluhorse { color: var(--brand-bluhorse); font-weight: 600; }
-
+/* ─── Stat cards ──────────────────────────────────────────── */
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
   margin: 20px 0;
 }
-.stat-card {
-  background: var(--surface-muted);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-.stat-card .label { font-size: 13px; color: var(--text-secondary); margin: 0 0 6px; }
-.stat-card .value { font-size: 24px; font-weight: 600; margin: 0; }
-.mono { font-family: "SFMono-Regular", Consolas, monospace; letter-spacing: 1px; }
+.stat-card { padding: 16px; background: var(--surface-muted); border-radius: var(--radius); }
+.stat-card .label { margin: 0 0 6px; font-size: 13px; color: var(--text-secondary); }
+.stat-card .value { margin: 0; font-size: 24px; font-weight: 600; }
+.stat-card .value-sm { font-size: 15px; }
 
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+/* ─── Search & filter fields ──────────────────────────────── */
+.search-row { display: flex; gap: 10px; margin-bottom: 10px; }
+.filter-row { display: flex; gap: 8px; margin-bottom: 14px; }
+
+.field {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--field-ink);
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* ─── Badges & brand colors ───────────────────────────────── */
+.badge { padding: 4px 10px; font-size: 12px; font-weight: 500; border-radius: var(--radius); }
+.badge-warning { color: var(--accent); background: var(--accent-bg); }
+.badge-danger { color: var(--danger); background: var(--danger-bg); }
+.badge-success { color: var(--success); background: var(--success-bg); }
+.badge-mc { color: var(--mc-fg); background: var(--mc-bg); }
+
+.brand-deestone { color: var(--brand-deestone); font-weight: 600; }
+.brand-bluhorse { color: var(--brand-bluhorse); font-weight: 600; }
+
+/* ─── Table ───────────────────────────────────────────────── */
+table { width: 100%; font-size: 13px; border-collapse: collapse; }
 .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 thead tr { background: var(--surface-muted); }
-th { text-align: left; padding: 10px 12px; font-weight: 500; color: var(--text-secondary); }
+th { padding: 10px 12px; font-weight: 500; text-align: left; color: var(--text-secondary); }
 td { padding: 10px 12px; border-top: 1px solid var(--border); }
-td.num { text-align: right; }
-td.center { text-align: center; }
+th.num, td.num { text-align: right; }
+th.center, td.center { text-align: center; }
 
+.item-name { max-width: 280px; }
+.mono { font-family: "SFMono-Regular", Consolas, monospace; letter-spacing: 1px; }
+.text-muted { color: var(--text-muted); }
+
+.table-msg { padding: 30px; text-align: center; color: var(--text-muted); }
+.table-msg-error { color: var(--danger); }
+
+/* ─── Upload: dropzone, preview, buttons ──────────────────── */
 .dropzone {
-  border: 2px dashed var(--border);
-  border-radius: 12px;
   padding: 48px 20px;
   text-align: center;
   color: var(--text-secondary);
   background: var(--surface);
+  border: 2px dashed var(--border);
+  border-radius: 12px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
 .dropzone.dragover { border-color: var(--accent); background: var(--accent-bg); }
 .dropzone p { margin: 6px 0; }
-.dropzone .big { font-size: 15px; color: var(--text-primary); font-weight: 500; }
+.dropzone .big { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+
+.preview-section { margin-top: 24px; }
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.preview-title { margin: 0; font-size: 15px; font-weight: 600; }
+.preview-actions { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; }
+.preview-actions .secondary { flex: 1; min-width: 100px; }
+.preview-actions .primary { flex: 1; min-width: 140px; }
 
 button.primary {
-  background: var(--accent);
-  color: #1A1300;
-  border: none;
   padding: 10px 18px;
-  border-radius: var(--radius);
   font-size: 14px;
-  cursor: pointer;
   font-weight: 600;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
 }
 button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
 button.secondary {
-  background: var(--surface);
-  color: var(--text-primary);
-  border: 1px solid var(--border);
   padding: 10px 18px;
-  border-radius: var(--radius);
   font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   cursor: pointer;
 }
 
-.status-msg { font-size: 13px; margin-top: 12px; padding: 10px 14px; border-radius: var(--radius); display: none; }
+.status-msg { display: none; margin-top: 12px; padding: 10px 14px; font-size: 13px; border-radius: var(--radius); }
 .status-msg.show { display: block; }
-.status-msg.ok { background: var(--success-bg); color: var(--success); }
-.status-msg.err { background: var(--danger-bg); color: var(--danger); }
+.status-msg.ok { color: var(--success); background: var(--success-bg); }
+.status-msg.err { color: var(--danger); background: var(--danger-bg); }
 
-footer.hint {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 16px;
-}
+/* ─── Footnotes ───────────────────────────────────────────── */
+footer.hint { margin-top: 16px; font-size: 12px; color: var(--text-muted); }
+.credit { padding: 20px 12px 30px; font-size: 12px; text-align: center; color: var(--text-muted); }
 
-/* ============ Mobile ============ */
+/* ============================================================
+   Mobile (≤600px)
+   ============================================================ */
 @media (max-width: 600px) {
-  .topbar {
-    padding: 12px 16px;
-  }
+  .topbar { padding: 12px 16px; }
   .topbar .title { font-size: 15px; }
   .topbar .subtitle { font-size: 12px; }
   .nav-links a { padding: 7px 10px; font-size: 12px; }
 
   .container { padding: 16px 12px 40px; }
 
-  .stat-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .stat-card { padding: 12px; }
   .stat-card .value { font-size: 19px; }
   .stat-card .label { font-size: 11px; }
 
-  /* Generic table-to-card fallback (used by upload.html preview table) */
+  /* Generic table → labeled cards (upload preview table) */
   .table-wrap { border: none; background: transparent; }
   table, thead, tbody, th, td, tr { display: block; width: 100%; }
   thead tr { position: absolute; top: -9999px; left: -9999px; }
 
   tbody tr {
+    margin-bottom: 10px;
+    padding: 10px 12px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    margin-bottom: 10px;
-    padding: 10px 12px;
   }
   tbody td {
-    border-top: none;
-    padding: 4px 0;
-    text-align: left !important;
     display: flex;
     justify-content: space-between;
     gap: 8px;
+    padding: 4px 0;
     font-size: 13px;
+    text-align: left !important;
+    border-top: none;
   }
   tbody td.center { justify-content: flex-start; }
   tbody td::before {
     content: attr(data-label);
+    flex-shrink: 0;
     font-weight: 500;
     color: var(--text-secondary);
-    flex-shrink: 0;
   }
 
-  /* Dashboard table: override with condensed 2-line card layout */
+  /* Dashboard table → condensed 2-line card (name on top, rest inline) */
   #stock-body tr {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    padding: 8px 10px;
     margin-bottom: 8px;
+    padding: 8px 10px;
   }
-
   #stock-body td {
+    display: block;
+    flex: 0 0 auto;
+    width: auto;
     padding: 0;
     font-size: 12px;
-    display: block;
-    width: auto;
-    flex: 0 0 auto;
   }
+  #stock-body td::before { content: none; }
 
-  /* Line 1: item name, full width, single line, truncated */
   #stock-body td[data-label="ชื่อสินค้า"] {
     order: 1;
     flex: 1 1 100%;
     width: 100%;
+    padding-bottom: 4px;
+    font-size: 12.5px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-bottom: 4px;
-    font-size: 12.5px;
   }
-
-  /* Line 2: brand, product type, year, qty, status all inline together on one row */
   #stock-body td[data-label="ยี่ห้อ"] { order: 2; padding-right: 6px; font-size: 11.5px; white-space: nowrap; }
   #stock-body td[data-label="ประเภทสินค้า"] { order: 3; padding-right: 6px; }
-  #stock-body td[data-label="ประเภทสินค้า"] .badge { font-size: 10px; padding: 2px 6px; white-space: nowrap; }
-  #stock-body td[data-label="สถานะ"] { order: 4; margin-left: auto; padding-right: 0; }
-  #stock-body td[data-label="สถานะ"] .badge { font-size: 10px; padding: 2px 6px; white-space: nowrap; }
-  #stock-body td::before { content: none; }
+  #stock-body td[data-label="สถานะ"] { order: 4; margin-left: auto; }
+  #stock-body td[data-label="ประเภทสินค้า"] .badge,
+  #stock-body td[data-label="สถานะ"] .badge { padding: 2px 6px; font-size: 10px; white-space: nowrap; }
 
   .dropzone { padding: 32px 14px; }
   .dropzone .big { font-size: 14px; }
+  .preview-section .table-wrap { border: none; }
 
-  #preview-section .table-wrap { border: none; }
+  button.primary, button.secondary { width: 100%; padding: 10px 14px; font-size: 13px; }
 
-  button.primary, button.secondary {
-    padding: 10px 14px;
-    font-size: 13px;
-    width: 100%;
-  }
+  .search-row .field { font-size: 12px; padding: 8px 10px; }
 
-  .search-row input {
-    font-size: 12px;
-    padding: 8px 10px;
-  }
-
-  .filter-row {
-    flex-wrap: wrap;
-  }
-
-  .filter-row select {
-    flex: 1 1 calc(50% - 4px);
-    min-width: 0;
-    font-size: 11px;
-    padding: 7px 6px;
-  }
+  .filter-row { flex-wrap: wrap; }
+  .filter-row .field { flex: 1 1 calc(50% - 4px); font-size: 11px; padding: 7px 6px; }
 }
