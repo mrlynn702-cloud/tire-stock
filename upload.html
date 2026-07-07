@@ -11,7 +11,7 @@
 <div class="topbar">
   <div>
     <p class="title">อัปโหลดข้อมูลสต๊อกยาง</p>
-    <p class="subtitle">ทีมเกราะข้อมูลยาง · Deestone / Bluhorse</p>
+    <p class="subtitle">Deestone / Bluhorse</p>
   </div>
   <div class="nav-links">
     <a href="index.html">Dashboard</a>
@@ -24,17 +24,17 @@
   <div id="dropzone" class="dropzone">
     <p class="big">ลากไฟล์ Excel มาวางตรงนี้</p>
     <p>หรือคลิกเพื่อเลือกไฟล์ (.xlsx, .xls)</p>
-    <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none;">
+    <input type="file" id="file-input" accept=".xlsx,.xls" hidden>
   </div>
 
   <div id="status-msg" class="status-msg"></div>
 
-  <div id="preview-section" style="display:none; margin-top:24px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-      <p style="font-size:15px; font-weight:600; margin:0;">ตรวจสอบข้อมูลก่อนอัปโหลด (<span id="row-count">0</span> รายการ)</p>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; width:100%;">
-        <button class="secondary" id="cancel-btn" style="flex:1; min-width:100px;">ยกเลิก</button>
-        <button class="primary" id="confirm-btn" style="flex:1; min-width:140px;">ยืนยันอัปโหลด</button>
+  <div id="preview-section" class="preview-section" style="display:none;">
+    <div class="preview-header">
+      <p class="preview-title">ตรวจสอบข้อมูลก่อนอัปโหลด (<span id="row-count">0</span> รายการ)</p>
+      <div class="preview-actions">
+        <button class="secondary" id="cancel-btn">ยกเลิก</button>
+        <button class="primary" id="confirm-btn">ยืนยันอัปโหลด</button>
       </div>
     </div>
     <div class="table-wrap">
@@ -44,8 +44,8 @@
             <th>ชื่อสินค้า</th>
             <th>ยี่ห้อ</th>
             <th>ประเภท</th>
-            <th style="text-align:center;">ปี</th>
-            <th style="text-align:right;">จำนวน</th>
+            <th class="center">ปี</th>
+            <th class="num">จำนวน</th>
           </tr>
         </thead>
         <tbody id="preview-body"></tbody>
@@ -57,8 +57,7 @@
   </div>
 
   <footer class="hint" style="margin-top:24px;">
-    รูปแบบคอลัมน์ในไฟล์ Excel ที่รองรับ (แถวแรกเป็นหัวตาราง): <code>Item name thai, Brand, Product group 2, Year, Available</code>
-    (ระบบจะอ่านจากคอลัมน์ C, E, H, O, T ตามลำดับ)
+    รูปแบบคอลัมน์ที่รองรับ (แถวแรกเป็นหัวตาราง): <code>Item name thai, Brand, Product group 2, Year, Available</code>
   </footer>
 
 </div>
@@ -67,58 +66,92 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script>
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('file-input');
-const statusMsg = document.getElementById('status-msg');
-const previewSection = document.getElementById('preview-section');
-const previewBody = document.getElementById('preview-body');
-const rowCount = document.getElementById('row-count');
-const confirmBtn = document.getElementById('confirm-btn');
-const cancelBtn = document.getElementById('cancel-btn');
+"use strict";
 
-let parsedRows = [];
-
-const COLUMN_MAP = {
-  item_name: ['item name thai', 'item name', 'ชื่อสินค้า'],
-  brand: ['brand', 'ยี่ห้อ'],
-  product_group: ['product group 2', 'product group', 'ประเภทสินค้า'],
-  year: ['year', 'ปี'],
-  qty: ['available', 'qty', 'จำนวน', 'คงเหลือ'],
+// ─── การตั้งค่า ───────────────────────────────────────────────
+// จับคู่ field ในฐานข้อมูล -> ชื่อหัวตารางที่ยอมรับ (เรียงตามลำดับความสำคัญ)
+const COLUMN_ALIASES = {
+  item_name:     ["item name thai", "item name", "ชื่อสินค้า"],
+  brand:         ["brand", "ยี่ห้อ"],
+  product_group: ["product group 2", "product group", "ประเภทสินค้า"],
+  year:          ["year", "ปี"],
+  qty:           ["available", "qty", "จำนวน", "คงเหลือ"],
 };
 
-function normalizeKey(key) {
-  return String(key).trim().toLowerCase();
+// วงเล็บเหลี่ยมที่เก็บไว้ในชื่อสินค้า (นอกจากนี้ตัดทิ้ง)
+const KEEP_BRACKETS = new Set(["1x50", "1x100", "1x200", "1x20", "1x10", "1x5", "1x25", "1x800"]);
+
+// ─── ตัวช่วย ───────────────────────────────────────────────────
+const $ = (id) => document.getElementById(id);
+const normalizeKey = (key) => String(key).trim().toLowerCase();
+
+/** ตัดวงเล็บเหลี่ยมที่ไม่อยู่ในรายการเก็บออกจากชื่อสินค้า */
+function cleanItemName(name) {
+  return String(name)
+    .replace(/\s*\[([^\]]*)\]/g, (_, inner) =>
+      KEEP_BRACKETS.has(inner.trim().toLowerCase()) ? ` [${inner.trim()}]` : "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
+/** แปลงหนึ่งแถวดิบจาก Excel เป็น object ตาม field ที่ต้องการ */
 function mapRow(rawRow) {
-  const result = {};
-  const lowerRow = {};
-  Object.keys(rawRow).forEach(k => { lowerRow[normalizeKey(k)] = rawRow[k]; });
+  const lookup = {};
+  for (const [rawKey, value] of Object.entries(rawRow)) {
+    lookup[normalizeKey(rawKey)] = value;
+  }
 
-  for (const field in COLUMN_MAP) {
-    for (const alias of COLUMN_MAP[field]) {
-      const key = normalizeKey(alias);
-      if (lowerRow[key] !== undefined) {
-        result[field] = lowerRow[key];
-        break;
-      }
-    }
+  const row = {};
+  for (const [field, aliases] of Object.entries(COLUMN_ALIASES)) {
+    const match = aliases.map(normalizeKey).find((alias) => lookup[alias] !== undefined);
+    if (match) row[field] = lookup[match];
   }
-  if (result.qty !== undefined) result.qty = Number(result.qty) || 0;
-  if (result.year !== undefined) result.year = Number(result.year) || null;
-  if (result.item_name !== undefined) {
-    const keepList = ['1x50', '1x100', '1x200', '1x20', '1x10', '1x5', '1x25', '1x800'];
-    result.item_name = String(result.item_name).replace(/\s*\[([^\]]*)\]/g, (match, inner) => {
-      const normalized = inner.trim().toLowerCase();
-      return keepList.includes(normalized) ? ' [' + inner.trim() + ']' : '';
-    }).replace(/\s+/g, ' ').trim();
-  }
-  return result;
+
+  row.qty = Number(row.qty) || 0;
+  row.year = Number(row.year) || null;
+  if (row.item_name !== undefined) row.item_name = cleanItemName(row.item_name);
+  return row;
 }
+
+// ─── สถานะ ─────────────────────────────────────────────────────
+let parsedRows = [];
 
 function showStatus(message, type) {
-  statusMsg.textContent = message;
-  statusMsg.className = `status-msg show ${type}`;
+  const el = $("status-msg");
+  el.textContent = message;
+  el.className = `status-msg show ${type}`;
+}
+
+function clearStatus() {
+  $("status-msg").className = "status-msg";
+}
+
+function resetUpload() {
+  parsedRows = [];
+  $("preview-section").style.display = "none";
+  $("file-input").value = "";
+  clearStatus();
+}
+
+// ─── อ่านไฟล์ + แสดงพรีวิว ─────────────────────────────────────
+function parseWorkbook(arrayBuffer) {
+  const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: "array" });
+  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rawRows = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+  return rawRows.map(mapRow).filter((r) => r.item_name && r.brand);
+}
+
+function renderPreview() {
+  $("row-count").textContent = parsedRows.length;
+  $("preview-body").innerHTML = parsedRows.map((r) => `
+    <tr>
+      <td data-label="ชื่อสินค้า" class="item-name">${r.item_name || "-"}</td>
+      <td data-label="ยี่ห้อ">${r.brand || "-"}</td>
+      <td data-label="ประเภท" class="text-muted">${r.product_group || "-"}</td>
+      <td data-label="ปี" class="center">${r.year || "-"}</td>
+      <td data-label="จำนวน" class="num mono">${r.qty}</td>
+    </tr>`).join("");
+  $("preview-section").style.display = "block";
 }
 
 function handleFile(file) {
@@ -126,99 +159,67 @@ function handleFile(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rawRows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
-
-      parsedRows = rawRows.map(mapRow).filter(r => r.item_name && r.brand);
-
-      if (parsedRows.length === 0) {
-        showStatus('ไม่พบข้อมูลที่อ่านได้ ตรวจสอบชื่อหัวตารางในไฟล์ Excel', 'err');
-        previewSection.style.display = 'none';
+      parsedRows = parseWorkbook(e.target.result);
+      if (!parsedRows.length) {
+        showStatus("ไม่พบข้อมูลที่อ่านได้ ตรวจสอบชื่อหัวตารางในไฟล์ Excel", "err");
+        $("preview-section").style.display = "none";
         return;
       }
-
+      clearStatus();
       renderPreview();
-      statusMsg.className = 'status-msg';
     } catch (err) {
       console.error(err);
-      showStatus('อ่านไฟล์ไม่สำเร็จ: ' + err.message, 'err');
+      showStatus("อ่านไฟล์ไม่สำเร็จ: " + err.message, "err");
     }
   };
   reader.readAsArrayBuffer(file);
 }
 
-function renderPreview() {
-  rowCount.textContent = parsedRows.length;
-  previewBody.innerHTML = parsedRows.map(r => `
-    <tr>
-      <td data-label="ชื่อสินค้า" style="max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.item_name || '-'}</td>
-      <td data-label="ยี่ห้อ">${r.brand || '-'}</td>
-      <td data-label="ประเภท" style="color:var(--text-secondary);">${r.product_group || '-'}</td>
-      <td data-label="ปี" class="center">${r.year || '-'}</td>
-      <td data-label="จำนวน" class="num mono">${r.qty ?? 0}</td>
-    </tr>
-  `).join('');
-  previewSection.style.display = 'block';
-}
+// ─── อัปโหลดเข้า Supabase (แทนที่ข้อมูลทั้งหมด) ──────────────────
+async function confirmUpload() {
+  if (!parsedRows.length) return;
 
-dropzone.addEventListener('click', () => fileInput.click());
-dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-dropzone.addEventListener('drop', (e) => {
-  e.preventDefault();
-  dropzone.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  handleFile(file);
-});
-fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
-
-cancelBtn.addEventListener('click', () => {
-  parsedRows = [];
-  previewSection.style.display = 'none';
-  fileInput.value = '';
-  statusMsg.className = 'status-msg';
-});
-
-confirmBtn.addEventListener('click', async () => {
-  if (parsedRows.length === 0) return;
-  confirmBtn.disabled = true;
-  confirmBtn.textContent = 'กำลังอัปโหลด...';
+  const btn = $("confirm-btn");
+  btn.disabled = true;
+  btn.textContent = "กำลังอัปโหลด...";
 
   try {
-    // แทนที่ข้อมูลทั้งหมด: ลบของเก่าก่อน แล้วเขียนชุดใหม่เข้าไป
-    const { error: deleteError } = await supabaseClient
-      .from(TABLE_NAME)
-      .delete()
-      .neq('id', 0); // ลบทุกแถว (ปรับเงื่อนไขตาม primary key จริงถ้าจำเป็น)
-
+    const { error: deleteError } = await supabaseClient.from(TABLE_NAME).delete().neq("id", 0);
     if (deleteError) throw deleteError;
 
-    const rowsWithTimestamp = parsedRows.map(r => ({
-      ...r,
-      updated_at: new Date().toISOString(),
-    }));
+    const timestamp = new Date().toISOString();
+    const rows = parsedRows.map((r) => ({ ...r, updated_at: timestamp }));
 
-    const { error: insertError } = await supabaseClient
-      .from(TABLE_NAME)
-      .insert(rowsWithTimestamp);
-
+    const { error: insertError } = await supabaseClient.from(TABLE_NAME).insert(rows);
     if (insertError) throw insertError;
 
-    showStatus(`อัปโหลดสำเร็จ ${parsedRows.length} รายการ`, 'ok');
-    previewSection.style.display = 'none';
+    showStatus(`อัปโหลดสำเร็จ ${parsedRows.length} รายการ`, "ok");
     parsedRows = [];
-    fileInput.value = '';
-
+    $("preview-section").style.display = "none";
+    $("file-input").value = "";
   } catch (err) {
     console.error(err);
-    showStatus('อัปโหลดไม่สำเร็จ: ' + (err.message || 'ตรวจสอบการตั้งค่า Supabase ใน config.js'), 'err');
+    showStatus("อัปโหลดไม่สำเร็จ: " + (err.message || "ตรวจสอบการตั้งค่า Supabase ใน config.js"), "err");
   } finally {
-    confirmBtn.disabled = false;
-    confirmBtn.textContent = 'ยืนยันอัปโหลด';
+    btn.disabled = false;
+    btn.textContent = "ยืนยันอัปโหลด";
   }
+}
+
+// ─── เชื่อม event ───────────────────────────────────────────────
+const dropzone = $("dropzone");
+dropzone.addEventListener("click", () => $("file-input").click());
+dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+dropzone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropzone.classList.remove("dragover");
+  handleFile(e.dataTransfer.files[0]);
 });
+
+$("file-input").addEventListener("change", (e) => handleFile(e.target.files[0]));
+$("cancel-btn").addEventListener("click", resetUpload);
+$("confirm-btn").addEventListener("click", confirmUpload);
 </script>
 
 </body>
