@@ -45,11 +45,6 @@
     <select id="filter-group" class="field">
       <option value="">ประเภทสินค้าทั้งหมด</option>
     </select>
-    <select id="filter-subtype" class="field">
-      <option value="">ชนิดทั้งหมด (T/T, T/L)</option>
-      <option value="T/T">T/T</option>
-      <option value="T/L">T/L</option>
-    </select>
   </div>
 
   <div class="table-wrap">
@@ -137,6 +132,16 @@ function thresholdFor(item) {
     ?? STOCK_THRESHOLDS.DEFAULT;
 }
 
+/** ป้ายกำกับรวม ใช้สำหรับ dropdown ประเภทสินค้า (รวม T/T, T/L เข้ากับ MC TIRE) */
+function combinedLabel(item) {
+  const { brandType, category } = parseGroup(item.product_group);
+  if (brandType === "MC" && category === "TIRE") {
+    return `Tire MC ${parseSubtype(item.item_name) || "T/T"}`;
+  }
+  const categoryLabel = { TUBE: "Tube", TIRE: "Tire", "RIM TAPE": "Rim Tape" }[category] || category;
+  return `${categoryLabel} ${brandType}`.trim();
+}
+
 function brandClass(brand) {
   const b = clean(brand).toLowerCase();
   if (b.includes("blu")) return "brand-bluhorse";
@@ -213,15 +218,13 @@ function applyFilters() {
   const pattern = document.getElementById("search-pattern").value.trim().toLowerCase();
   const brand = document.getElementById("filter-brand").value;
   const group = document.getElementById("filter-group").value;
-  const subtype = document.getElementById("filter-subtype").value;
 
   const filtered = stockData.filter((item) => {
     const name = clean(item.item_name).toLowerCase();
     return (!size || name.includes(size))
       && (!pattern || name.includes(pattern))
       && (!brand || clean(item.brand).toLowerCase() === brand.toLowerCase())
-      && (!group || collapse(item.product_group) === group)
-      && (!subtype || parseSubtype(item.item_name) === subtype);
+      && (!group || combinedLabel(item) === group);
   });
 
   renderRows(filtered);
@@ -229,14 +232,14 @@ function applyFilters() {
 
 function populateGroupFilter(rows) {
   const select = document.getElementById("filter-group");
-  const groups = [...new Set(rows.map((r) => collapse(r.product_group)).filter(Boolean))].sort();
+  const labels = [...new Set(rows.map(combinedLabel).filter(Boolean))].sort();
   select.innerHTML = '<option value="">ประเภทสินค้าทั้งหมด</option>'
-    + groups.map((g) => `<option value="${g}">${g}</option>`).join("");
+    + labels.map((g) => `<option value="${g}">${g}</option>`).join("");
 }
 
 ["search-size", "search-pattern"].forEach((id) =>
   document.getElementById(id).addEventListener("input", applyFilters));
-["filter-brand", "filter-group", "filter-subtype"].forEach((id) =>
+["filter-brand", "filter-group"].forEach((id) =>
   document.getElementById(id).addEventListener("change", applyFilters));
 
 // ─── โหลดข้อมูลจาก Supabase ────────────────────────────────────
