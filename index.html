@@ -160,7 +160,8 @@ function mergeDuplicates(rows) {
 
   for (const row of rows) {
     const name = collapse(clean(row.item_name).replace(MERGE_IGNORE, " "));
-    const key = [name, clean(row.brand).toLowerCase(), collapse(row.product_group)].join("|");
+    const itemId = clean(row.item_id);
+    const key = itemId || [name, clean(row.brand).toLowerCase(), collapse(row.product_group)].join("|");
     const qty = Number(row.qty) || 0;
 
     const existing = merged.get(key);
