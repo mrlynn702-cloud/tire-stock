@@ -71,6 +71,7 @@
 // ─── การตั้งค่า ───────────────────────────────────────────────
 // จับคู่ field ในฐานข้อมูล -> ชื่อหัวตารางที่ยอมรับ (เรียงตามลำดับความสำคัญ)
 const COLUMN_ALIASES = {
+  item_id:       ["item id", "item_id", "รหัสสินค้า"],
   item_name:     ["item name thai", "item name", "ชื่อสินค้า"],
   brand:         ["brand", "ยี่ห้อ"],
   product_group: ["product group 2", "product group", "ประเภทสินค้า"],
@@ -109,6 +110,7 @@ function mapRow(rawRow) {
 
   row.qty = Number(row.qty) || 0;
   row.year = Number(row.year) || null;
+  if (row.item_id !== undefined) row.item_id = String(row.item_id).trim();
   if (row.item_name !== undefined) row.item_name = cleanItemName(row.item_name);
   return row;
 }
